@@ -11,9 +11,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@nhl-api/client": "^1.2.1",
+    "@nhl-api/players": "^3.1.4",
+    "@nhl-api/teams": "^3.1.4",
     "axios": "^1.2.1",
     "cheerio": "^1.0.0-rc.12",
     "discord.js": "^13.6.0",
+    "dotenv": "^16.0.3",
     "tslib": "^2.3.1",
     "typescript": "^4.6.2",
     "winston": "^3.8.2"

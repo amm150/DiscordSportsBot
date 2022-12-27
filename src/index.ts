@@ -1,8 +1,11 @@
 import { Client } from 'discord.js';
 import config from './config';
-import helpCommand from './commands';
+import { helpCommand, pointsCommand, shotsCommand } from './commands';
+import dotenv from 'dotenv';
 
-const { intents, prefix, token } = config;
+dotenv.config();
+
+const { intents, prefix } = config;
 
 const client = new Client({
   intents,
@@ -27,16 +30,19 @@ client.on('messageCreate', async (message) => {
     const command = args.shift();
 
     switch(command) {
-      case 'ping':
-        const msg = await message.reply('Pinging...');
-        await msg.edit(`Pong! The round trip took ${Date.now() - msg.createdTimestamp}ms.`);
+      case 'shots':
+        await shotsCommand(message, args[0]);
         break;
 
-      case 'say':
-      case 'repeat':
-        if (args.length > 0) await message.channel.send(args.join(' '));
-        else await message.reply('You did not send a message to repeat, cancelling command.');
+      case 'points':
+        await pointsCommand(message, args[0]);
         break;
+
+      // case 'say':
+      // case 'repeat':
+      //   if (args.length > 0) await message.channel.send(args.join(' '));
+      //   else await message.reply('You did not send a message to repeat, cancelling command.');
+      //   break;
 
       case 'help':
         const embed = helpCommand(message);
@@ -47,4 +53,4 @@ client.on('messageCreate', async (message) => {
   }
 });
 
-client.login(token);
+client.login(process.env.DISCORD_BOT_TOKEN);
