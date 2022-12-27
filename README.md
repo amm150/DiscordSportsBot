@@ -2,7 +2,7 @@
 
 First of all, go to [discord developer dashboard](https://discord.com/developers/applications/) and choose the bot you want to host, go to the bot tab, and click on `Regenerate token`, and then copy the token.
 
-After this, go to the "Lock"-like tab on replit and here, in the `key` enter `DISCORD_TOKEN` and in the `value` field, enter the token you copied from discord developer dashboard.
+After this, go to the "Lock"-like tab on replit and here, in the `key` enter `DISCORD_BOT_TOKEN` and in the `value` field, enter the token you copied from discord developer dashboard.
 ![image](https://i.postimg.cc/k5tMPRpk/image.png)
 
 ---
@@ -18,8 +18,8 @@ You can modify any kind of configuration in `src/config.ts`. DO NOT change any f
 In the template, the bot has 3 basic commands: -
 
 1. `help`: Shows the list of commands or details of a specific command.
-2. `say`: Repeats whatever the users tells it to.
-3. `ping`: Checks connectivity with discord servers.
+2. `shots`: Shows nhl shot consistency data.
+3. `points`: Shows nhl points consistency data.
 
 You can edit these commands and/or add more in `src/index.ts`. After creating the command in `src/index.ts`, go to `src/commands.ts` and to the json, add a new entry with the format
 ```ts
