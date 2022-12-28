@@ -38,12 +38,6 @@ client.on('messageCreate', async (message) => {
         await pointsCommand(message, args[0]);
         break;
 
-      // case 'say':
-      // case 'repeat':
-      //   if (args.length > 0) await message.channel.send(args.join(' '));
-      //   else await message.reply('You did not send a message to repeat, cancelling command.');
-      //   break;
-
       case 'help':
         const embed = helpCommand(message);
         embed.setThumbnail(client.user!.displayAvatarURL());

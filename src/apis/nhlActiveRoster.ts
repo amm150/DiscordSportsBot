@@ -23,7 +23,7 @@ export default async function getActiveRoster(teams: string[]) {
     let players: PlayerData = {};
 
     for (const team in teams) {
-        const response = await nhlApi.getTeams({ name: teams[team], expand: "roster" } as Options) as unknown as RosterData;
+        const response = await nhlApi.getTeams({ id: teams[team], expand: "roster" } as Options) as unknown as RosterData;
 
         response.reduce((prevPlayers: PlayerData, curPlayer) => {
             // Ignore goalies

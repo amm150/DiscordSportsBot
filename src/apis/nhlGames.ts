@@ -23,7 +23,7 @@ export default async function getNHLGames() {
     const response = await nhlApi.getSchedule({ date }) as unknown as GamesData;
 
     const teamIds = response.games.reduce((prevVal: string[], curVal) => {
-        return [...prevVal, curVal.teams.away.team.name, curVal.teams.home.team.name];
+        return [...prevVal, curVal.teams.away.team.id, curVal.teams.home.team.id];
     }, []);
 
     return teamIds;
