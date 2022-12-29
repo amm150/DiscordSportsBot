@@ -12,6 +12,11 @@ export interface PlayerStats {
     over: number,
     under: number,
     rating: number,
+    team: string,
+    opponent: string,
+    allowed: number,
+    allowedRank: string,
+    powerPlaysRank: string,
 }
 
 interface GameData {
@@ -33,11 +38,13 @@ export default async function getNHLPlayerStats(names: OddsPlayerData[], players
     let playerStats: PlayerStats[] = [];
     const season = calculateSeason();
 
-
     for (const name in names) {
         const playerName = names[name].name;
         const playerOdds = Number(names[name].line);
-        const playerId = getPlayerId(playerName, players);
+        const {
+            id: playerId,
+            name: playerNameFormatted,
+        } = getPlayerId(playerName, players);
 
         if(!playerId) {
             continue;
@@ -65,6 +72,17 @@ export default async function getNHLPlayerStats(names: OddsPlayerData[], players
         const over = dataArr.filter(value => value > playerOdds).length;
         const under = dataArr.filter(value => value < playerOdds).length;
         const rating =  over + (mean - playerOdds) + (median - playerOdds);
+        const {
+            shotsAllowed,
+            goalsAllowed,
+            shotsAllowedRank,
+            goalsAllowedRank,
+            powerPlaysAllowedRank,
+            team,
+            opponent,
+        } = players[playerNameFormatted];
+        const isShots = identifier === "shots";
+    
 
         playerStats.push({
             name: playerName,
@@ -74,6 +92,11 @@ export default async function getNHLPlayerStats(names: OddsPlayerData[], players
             over,
             under,
             rating,
+            team,
+            opponent,
+            allowed: isShots ? shotsAllowed : goalsAllowed,
+            allowedRank: isShots ? shotsAllowedRank : goalsAllowedRank,
+            powerPlaysRank: powerPlaysAllowedRank,
         });
     }
     

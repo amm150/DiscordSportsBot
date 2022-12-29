@@ -1,6 +1,6 @@
 import { getPlayerId as getPlayerByName } from '@nhl-api/players';
 import { Message, MessageEmbed } from 'discord.js';
-import type { PlayerData } from './apis/nhlActiveRoster';
+import type { PlayerData, RosterData } from './apis/nhlActiveRoster';
 import type { PlayerStats } from './apis/nhlPlayerStats';
 
 export const calculateSeason = () => {
@@ -29,10 +29,14 @@ export const getPlayerId = (name: string, players: PlayerData) => {
             throw new Error(`Found multiple player IDs for ${formattedName}`)
         }
 
-        return playerId;
+        return {
+            id: playerId,
+            name: formattedName,
+        };
     } catch (e) {
         console.log(e);
         let playerId = players[formattedName]?.id;
+        let playerName = formattedName;
 
         if(!playerId) {
             const fullName = formattedName.split(' ');
@@ -43,16 +47,21 @@ export const getPlayerId = (name: string, players: PlayerData) => {
                 if(nameMap[i][0] === firstName) {
                     const updatedName = `${nameMap[i][1]} ${lastName}`;
                     playerId = players[updatedName]?.id;
+                    playerName = updatedName;
                     break;
                 } else if (nameMap[i][1] === firstName) {
                     const updatedName = `${nameMap[i][0]} ${lastName}`;
                     playerId = players[updatedName]?.id;
+                    playerName = updatedName;
                     break;
                 }
             }
         }
 
-        return playerId;
+        return {
+            id: playerId,
+            name: playerName,
+        };
     }
 }
 
@@ -76,10 +85,43 @@ export const buildMessageEmbed = (message: Message, playerStats: PlayerStats[], 
 
     playerStats.forEach((playerStat) => {
         embed.addField(
-            playerStat.name,
-            `Line:   ${playerStat.line} \nOver:   ${playerStat.over} \nUnder:  ${playerStat.under} \nMean:  ${playerStat.mean} \nMedian:  ${playerStat.median}`
+            `${playerStat.name} - (${playerStat.team} vs. ${playerStat.opponent})`,
+            `Line:   ${playerStat.line}
+            Over:   ${playerStat.over}
+            Under:  ${playerStat.under}
+            Mean:  ${playerStat.mean}
+            Allowed Per Game:  ${Math.round(playerStat.allowed *100) / 100}
+            Allowed Rank:  ${playerStat.allowedRank}
+            Powerplay Allowed Rank:  ${playerStat.powerPlaysRank}`
         )
     });
 
     return embed;
+}
+
+export interface TeamStats {
+    shotsAllowed: number,
+    goalsAllowed: number,
+    shotsAllowedRank: string,
+    powerPlaysAllowedRank: string,
+    goalsAllowedRank: string,
+    team: string,
+    opponent: string,
+}
+
+export const getSkatersFromRoster = (players: RosterData, teamData: TeamStats) => {
+    let skaters: PlayerData = {};
+    players.reduce((prevPlayers: PlayerData, curPlayer) => {
+        // Ignore goalies
+        if (curPlayer.position.code !== "G") {
+            skaters[curPlayer.person.fullName] = {
+                id: curPlayer.person.id,
+                ...teamData,
+            };
+        }
+    
+        return prevPlayers;
+    }, {});
+
+    return skaters;
 }
