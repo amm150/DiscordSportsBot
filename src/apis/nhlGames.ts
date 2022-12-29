@@ -26,7 +26,9 @@ export interface NHLGameData {
 }
 
 export default async function getNHLGames() {
-    const date = new Date().toLocaleDateString("en-CA")
+    const date = new Date().toLocaleDateString("en-CA", {
+        timeZone: 'America/New_York',
+    });
     const response = await nhlApi.getSchedule({ date }) as unknown as GamesData;
 
     const teamIds = response.games.reduce((prevVal: NHLGameData[], curVal) => {
