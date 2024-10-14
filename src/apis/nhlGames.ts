@@ -1,53 +1,54 @@
-import { nhlApi } from "@nhl-api/client";
+import axios, { AxiosResponse } from "axios"
 
 export interface TeamData {
     id: string,
-    name: string,
+    abbrev: string
 }
 
 interface GameData {
-    teams: {
-        away: {
-            team: TeamData,
-        },
-        home: {
-            team: TeamData,
-        }
-    }
+    awayTeam: TeamData,
+    homeTeam: TeamData,
 }
 
-interface GamesData {
+interface GameSchedule {
     games: GameData[]
 }
 
+interface GamesData {
+    gameWeek: GameSchedule[]
+}
+
 export interface NHLGameData {
-    home: TeamData,
-    away: TeamData
+    homeTeam: TeamData,
+    awayTeam: TeamData
 }
 
 export default async function getNHLGames() {
     const date = new Date().toLocaleDateString("en-CA", {
         timeZone: 'America/New_York',
-    });
-    const response = await nhlApi.getSchedule({ date }) as unknown as GamesData;
 
-    const teamIds = response.games.reduce((prevVal: NHLGameData[], curVal) => {
+    });
+
+    const response = await axios.get<any, AxiosResponse<GamesData>>(`https://api-web.nhle.com/v1/schedule/${date}`)
+    const games = response.data.gameWeek[0].games
+
+    const teamIds = games.reduce((prevVal: NHLGameData[], curVal) => {
         const {
             id: homeTeamID,
-            name: homeTeamName,
-        } = curVal.teams.home.team;
+            abbrev: homeTeamName,
+        } = curVal.homeTeam;
         const {
             id: awayTeamID,
-            name: awayTeamName,
-        } = curVal.teams.away.team;
+            abbrev: awayTeamName,
+        } = curVal.awayTeam;
 
         return [...prevVal, { 
-            away: {
-                name: homeTeamName,
+            awayTeam: {
+                abbrev: awayTeamName,
                 id: homeTeamID,
             },
-            home: {
-                name: awayTeamName,
+            homeTeam: {
+                abbrev: homeTeamName,
                 id: awayTeamID,
             },
         }];

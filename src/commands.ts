@@ -2,8 +2,7 @@ import { Message, MessageEmbed } from 'discord.js';
 import getActiveRoster from './apis/nhlActiveRoster';
 import getNHLGames from './apis/nhlGames';
 import getNHLPlayerStats from './apis/nhlPlayerStats';
-import getPlayerPointsOdds from './apis/nhlPointOdds';
-import getPlayerShotOdds from './apis/nhlShotOdds';
+import getPlayerOdds from './apis/nhlOdds';
 import config from './config';
 import { buildMessageEmbed } from './utils';
 
@@ -29,7 +28,7 @@ export async function shotsCommand(message: Message, gameCount: string = '10') {
 
   const teams = await getNHLGames();
   const players = await getActiveRoster(teams);
-  const playerShotOdds = await getPlayerShotOdds();
+  const playerShotOdds = await getPlayerOdds("player_shots_on_goal");
   const playerStats = await getNHLPlayerStats(playerShotOdds, players, 'shots', Number(gameCount));
   const playersSorted = playerStats.sort(function(a,b){return a.rating - b.rating}).reverse().slice(0, 8);
 
@@ -43,9 +42,10 @@ export async function pointsCommand(message: Message, gameCount: string = '10') 
 
   const teams = await getNHLGames();
   const players = await getActiveRoster(teams);
-  const playerPointsOdds = await getPlayerPointsOdds();
+  const playerPointsOdds = await getPlayerOdds("player_points");
   const playerStats = await getNHLPlayerStats(playerPointsOdds, players, 'points', Number(gameCount));
   const playersSorted = playerStats.sort(function(a,b){return a.rating - b.rating}).reverse().slice(0, 8);
+  console.log(playerPointsOdds)
 
   const embed = buildMessageEmbed(message, playersSorted, gameCount, 'points');
 

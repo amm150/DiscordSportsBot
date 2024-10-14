@@ -1,6 +1,5 @@
-import { getPlayerId as getPlayerByName } from '@nhl-api/players';
 import { Message, MessageEmbed } from 'discord.js';
-import type { PlayerData, RosterData } from './apis/nhlActiveRoster';
+import type { PlayerData, RosterPlayerData } from './apis/nhlActiveRoster';
 import type { PlayerStats } from './apis/nhlPlayerStats';
 
 export const calculateSeason = () => {
@@ -23,14 +22,12 @@ export const getPlayerId = (name: string, players: PlayerData) => {
     const formattedName = name.replace(/ *\([^)]*\) */g, "");
 
     try {
-        const playerId = getPlayerByName(formattedName);
-
-        if(Array.isArray(playerId)) {
-            throw new Error(`Found multiple player IDs for ${formattedName}`)
+        if (!players[formattedName]) {
+            throw new Error(`Player name does NOT match ${formattedName}`)
         }
 
         return {
-            id: playerId,
+            id: players[formattedName].id,
             name: formattedName,
         };
     } catch (e) {
@@ -38,13 +35,13 @@ export const getPlayerId = (name: string, players: PlayerData) => {
         let playerId = players[formattedName]?.id;
         let playerName = formattedName;
 
-        if(!playerId) {
+        if (!playerId) {
             const fullName = formattedName.split(' ');
             const firstName = fullName[0];
             const lastName = fullName[1];
-    
-            for(const i in nameMap) {
-                if(nameMap[i][0] === firstName) {
+
+            for (const i in nameMap) {
+                if (nameMap[i][0] === firstName) {
                     const updatedName = `${nameMap[i][1]} ${lastName}`;
                     playerId = players[updatedName]?.id;
                     playerName = updatedName;
@@ -59,15 +56,15 @@ export const getPlayerId = (name: string, players: PlayerData) => {
         }
 
         return {
-            id: playerId,
-            name: playerName,
+        id: playerId,
+        name: playerName,
         };
     }
 }
 
 export const getMedian = function(array: number[]) {
     array.sort(function(a, b) {
-      return a - b;
+        return a - b;
     });
     var mid = array.length / 2;
     return mid % 1 ? array[mid - 0.5] : (array[mid - 1] + array[mid]) / 2;
@@ -79,47 +76,51 @@ export const buildMessageEmbed = (message: Message, playerStats: PlayerStats[], 
     const footerText = message.author.tag;
     const footerIcon = message.author.displayAvatarURL();
     const embed = new MessageEmbed()
-      .setTitle(`${command.toLocaleUpperCase()} Data for last ${gameCount} games`)
-      .setColor('GREEN')
-      .setFooter({ text: footerText, iconURL: footerIcon });
+        .setTitle(`${command.toLocaleUpperCase()} Data for last ${gameCount} games`)
+        .setColor('GREEN')
+        .setFooter({ text: footerText, iconURL: footerIcon });
 
     playerStats.forEach((playerStat) => {
         embed.addField(
-            `${playerStat.name} - (${playerStat.team} vs. ${playerStat.opponent})`,
+            `${playerStat.name} - (${playerStat.homeTeam} @ ${playerStat.awayTeam})`,
             `Line:   ${playerStat.line}
             Over:   ${playerStat.over}
             Under:  ${playerStat.under}
-            Mean:  ${playerStat.mean}
-            Allowed Per Game:  ${Math.round(playerStat.allowed *100) / 100}
-            Allowed Rank:  ${playerStat.allowedRank}
-            Powerplay Allowed Rank:  ${playerStat.powerPlaysRank}`
+            Mean:  ${playerStat.mean}`
         )
     });
 
     return embed;
 }
 
-export interface TeamStats {
-    shotsAllowed: number,
-    goalsAllowed: number,
-    shotsAllowedRank: string,
-    powerPlaysAllowedRank: string,
-    goalsAllowedRank: string,
-    team: string,
-    opponent: string,
-}
+// export interface TeamStats {
+//     shotsAllowed: number,
+//     goalsAllowed: number,
+//     shotsAllowedRank: string,
+//     powerPlaysAllowedRank: string,
+//     goalsAllowedRank: string,
+//     team: string,
+//     opponent: string,
+// }
 
-export const getSkatersFromRoster = (players: RosterData, teamData: TeamStats) => {
+export const getSkatersFromRoster = (forwards: RosterPlayerData[], defensemen: RosterPlayerData[]) => {
     let skaters: PlayerData = {};
-    players.reduce((prevPlayers: PlayerData, curPlayer) => {
-        // Ignore goalies
-        if (curPlayer.position.code !== "G") {
-            skaters[curPlayer.person.fullName] = {
-                id: curPlayer.person.id,
-                ...teamData,
-            };
-        }
-    
+    // TODO make function to reduce duplication
+    forwards.reduce((prevPlayers: PlayerData, curPlayer) => {
+        let playerName = `${curPlayer.firstName.default} ${curPlayer.lastName.default}`
+        skaters[playerName] = {
+            id: curPlayer.id,
+        };
+
+        return prevPlayers;
+    }, {});
+
+    defensemen.reduce((prevPlayers: PlayerData, curPlayer) => {
+        let playerName = `${curPlayer.firstName.default} ${curPlayer.lastName.default}`
+        skaters[playerName] = {
+            id: curPlayer.id,
+        };
+
         return prevPlayers;
     }, {});
 

@@ -1,104 +1,90 @@
-import { nhlApi } from "@nhl-api/client";
+
 import { calculateSeason, getMean, getMedian, getPlayerId } from "../utils";
-import type { OddsPlayerData } from "./nhlShotOdds";
+import type { OddsPlayerData } from "./nhlOdds";
 import type { PlayerData } from "./nhlActiveRoster";
+import axios, { AxiosResponse } from "axios";
 
 export interface PlayerStats {
-    [key: string]: any,
-    name: string,
-    line: number,
-    mean: number,
-    median: number,
-    over: number,
-    under: number,
-    rating: number,
-    team: string,
-    opponent: string,
-    allowed: number,
-    allowedRank: string,
-    powerPlaysRank: string,
+  [key: string]: any,
+  name: string,
+  line: number,
+  mean: number,
+  median: number,
+  over: number,
+  under: number,
+  rating: number,
 }
 
 interface GameData {
-    stat: {
-        assists: number,
-        shots: number,
-        points: number,
-        goals: number,
-        hits: number,
-        blocked: number,
-    }
+    assists: number,
+    shots: number,
+    points: number,
+    goals: number,
+    powerPlayGoals: number,
+    powerPlayPoints: number,
 }
 
 interface PlayerGameData {
-    splits: GameData[],
+  gameLog: GameData[],
 }
 
-export default async function getNHLPlayerStats(names: OddsPlayerData[], players: PlayerData, identifier: keyof GameData['stat'], gameCount: number) {
-    let playerStats: PlayerStats[] = [];
-    const season = calculateSeason();
+export default async function getNHLPlayerStats(names: OddsPlayerData[], players: PlayerData, identifier: keyof GameData, gameCount: number) {
+  let playerStats: PlayerStats[] = [];
+  const season = calculateSeason();
 
-    for (const name in names) {
-        const playerName = names[name].name;
-        const playerOdds = Number(names[name].line);
-        const {
-            id: playerId,
-            name: playerNameFormatted,
-        } = getPlayerId(playerName, players);
+  for (const name in names) {
+    const {
+      name: playerName,
+      line,
+      homeTeam,
+      awayTeam
+    } = names[name]
+    const playerOdds = Number(line)
+    const {
+      id: playerId,
+    } = getPlayerId(playerName, players);
 
-        if(!playerId) {
-            continue;
-        }
-
-        const {
-            splits
-        } = await nhlApi.getPlayer({
-            id: playerId,
-            stats: "gameLog",
-            season: season,
-        }) as unknown as PlayerGameData;
-
-        const lastNGames = splits.slice(0, gameCount);
-        const dataArr = lastNGames.map((gameData: GameData) => {
-            return gameData.stat[identifier];
-        }, []);
-
-        if(dataArr.length !== gameCount) {
-            continue;
-        }
-
-        const mean =  getMean(dataArr);
-        const median = getMedian(dataArr);
-        const over = dataArr.filter(value => value > playerOdds).length;
-        const under = dataArr.filter(value => value < playerOdds).length;
-        const rating =  over + (mean - playerOdds) + (median - playerOdds);
-        const {
-            shotsAllowed,
-            goalsAllowed,
-            shotsAllowedRank,
-            goalsAllowedRank,
-            powerPlaysAllowedRank,
-            team,
-            opponent,
-        } = players[playerNameFormatted];
-        const isShots = identifier === "shots";
-    
-
-        playerStats.push({
-            name: playerName,
-            line: playerOdds,
-            mean,
-            median,
-            over,
-            under,
-            rating,
-            team,
-            opponent,
-            allowed: isShots ? shotsAllowed : goalsAllowed,
-            allowedRank: isShots ? shotsAllowedRank : goalsAllowedRank,
-            powerPlaysRank: powerPlaysAllowedRank,
-        });
+    if (!playerId) {
+      continue;
     }
-    
-    return playerStats;
+
+    const {
+      data: {
+        gameLog
+      }
+    } = await axios.get<any, AxiosResponse<PlayerGameData>>(`https://api-web.nhle.com/v1/player/${playerId}/game-log/${season}/2`);
+
+    if (typeof (gameLog) == 'undefined') {
+      continue;
+    }
+
+    const lastNGames = gameLog.slice(0, gameCount);
+    const dataArr = lastNGames.map((gameData: GameData) => {
+      return gameData[identifier];
+    }, []);
+
+    if (dataArr.length !== gameCount) {
+      continue;
+    }
+
+    const mean = getMean(dataArr);
+    const median = getMedian(dataArr);
+    const over = dataArr.filter(value => value > playerOdds).length;
+    const under = dataArr.filter(value => value < playerOdds).length;
+    const rating = over + (mean - playerOdds) + (median - playerOdds);
+
+    playerStats.push({
+      name: playerName,
+      line: playerOdds,
+      mean,
+      median,
+      over,
+      under,
+      rating,
+      homeTeam,
+      awayTeam
+    });
+  }
+
+  return playerStats;
 };
