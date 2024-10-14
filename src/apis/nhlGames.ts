@@ -24,10 +24,12 @@ export interface NHLGameData {
 }
 
 export default async function getNHLGames() {
-    const date = new Date().toLocaleDateString("en-CA", {
+    let date = new Date().toLocaleDateString("en-CA", {
         timeZone: 'America/New_York',
-
     });
+
+    const dateArray = date.split("/")
+    date = dateArray[2] + "-" + dateArray[0] + "-" + dateArray[1]
 
     const response = await axios.get<any, AxiosResponse<GamesData>>(`https://api-web.nhle.com/v1/schedule/${date}`)
     const games = response.data.gameWeek[0].games
