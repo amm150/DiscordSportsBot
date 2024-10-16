@@ -43,7 +43,8 @@ export default async function getPlayerOdds(market: string) {
 
     for (const event of events.data) {
         const playerOdds = await axios.get<any, AxiosResponse<PlayerOddsData>>(`https://api.the-odds-api.com/v4/sports/icehockey_nhl/events/${event.id}/odds?apiKey=${process.env.ODDS_API_KEY}&regions=us&oddsFormat=american&markets=${market}`)
-        const bookData = playerOdds.data.bookmakers.find(bookData => bookData.key === "fanduel")
+        let bookData = playerOdds.data.bookmakers.find(bookData => bookData.key === "draftkings")
+        // TODO: reduce duplication here
 
         if (typeof(bookData) !== "undefined") {
             const homeTeam = playerOdds.data.home_team
@@ -58,6 +59,23 @@ export default async function getPlayerOdds(market: string) {
                     })
                 }
             })
+        } else {
+            bookData = playerOdds.data.bookmakers.find(bookData => bookData.key === "fanduel")
+
+            if (typeof(bookData) !== "undefined") {
+                const homeTeam = playerOdds.data.home_team
+                const awayTeam = playerOdds.data.away_team
+                bookData.markets[0].outcomes.forEach((data) => {
+                    if (data.name === "Over") {
+                        players.push({
+                            name: data.description,
+                            line: String(data.point),
+                            homeTeam: homeTeam,
+                            awayTeam: awayTeam,
+                        })
+                    }
+                })
+            }
         }
     }
 
